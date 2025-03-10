@@ -1,0 +1,35 @@
+// Load CMIP6 dataset from NASA GDDP-CMIP6
+var dataset = ee.ImageCollection("NASA/GDDP-CMIP6")
+  .filter(ee.Filter.eq("model", "GFDL-ESM4"))  // Choose climate model
+  .filter(ee.Filter.eq("scenario", "ssp585"))  // Choose scenario (e.g., ssp245, ssp585)
+  .filterDate("2040-01-01", "2040-12-31")      // Select year
+  .select("pr");  // 'pr' represents precipitation (kg/m²/s)
+
+
+// Compute Mean Annual Rainfall
+var meanRainfall = dataset.mean()
+  .multiply(86400 * 365)  // Convert from kg/m²/s to mm/year
+  .clip(studyArea);
+
+// Visualization Parameters
+var visParams = {
+  min: 0, 
+  max: 3000,  // Adjust max based on expected range (mm/year)
+  palette: ["blue", "cyan", "yellow", "red"]
+};
+
+// Add to GEE Map
+Map.centerObject(studyArea, 6);
+Map.addLayer(meanRainfall, visParams, "Mean Annual Rainfall");
+
+// Export Mean Rainfall as GeoTIFF
+Export.image.toDrive({
+  image: meanRainfall, 
+  description: "CMIP6_Mean_Rainfall",
+  scale: 1000,  // Adjust resolution
+  region: studyArea,
+  fileFormat: "GeoTIFF"
+});
+
+
+
